@@ -1,6 +1,7 @@
 from yahoo_oauth import OAuth2
 import yahoo_fantasy_api as yfa
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 global sc
 global gm
@@ -36,9 +37,8 @@ print(roster)
 
 ################### Server ##############################
 app = Flask(__name__)
+CORS(app)
 print("SERVER IS RUNNING...")
-
-
 
 ################## Routes ###############################
 @app.route("/standings", methods=["GET"])
