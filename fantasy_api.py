@@ -3,6 +3,8 @@ import yahoo_fantasy_api as yfa
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+# venv/vsCode activate work around
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 global sc
 global gm
 global leagues
@@ -50,7 +52,7 @@ def GetStandings():
   return jsonify(standings)
 
 @app.route("/roster", methods=["GET"])
-def GetRoster():
+def GetMyRoster():
   # Get team roster
   roster = my_team.roster()
   return jsonify(roster)
