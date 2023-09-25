@@ -35,7 +35,12 @@ my_team = last_years_lg.to_team(team_key)
 # Get team roster
 roster = my_team.roster()
 
-print(roster)
+# player_ids = []
+# for player in roster:
+#     player_ids.append(player['player_id'])
+# print(player_ids)
+# stats = last_years_lg.player_stats(player_ids, 'season', '', '', 2021)
+# print(stats)
 
 ################### Server ##############################
 app = Flask(__name__)
@@ -55,7 +60,13 @@ def GetStandings():
 def GetMyRoster():
   # Get team roster
   roster = my_team.roster()
-  return jsonify(roster)
+  player_ids = []
+  for player in roster:
+    player_ids.append(player['player_id'])
+    print(player_ids)
+    stats = last_years_lg.player_stats(player_ids, 'season', '', '', 2021)
+    print(stats)
+  return jsonify(stats)
 
 @app.route("/matchup/<weekId>", methods=["GET"])
 def GetMatchup(weekId = 1):
@@ -85,6 +96,7 @@ def GetFreeAgents(position):
     # Get Free Agents For A League
     # Must supply Postion as a string
     free_agents = last_years_lg.free_agents(position)
+    
     return jsonify(free_agents)
 
 @app.route("/stats/season/<stringOfPlayerIds>", methods=["GET"])
