@@ -91,13 +91,43 @@ def GetDrops():
     drops = last_years_lg.transactions('drop', '10')
     return jsonify(drops)
 
-@app.route("/freeAgents/<position>", methods=["GET"])
-def GetFreeAgents(position):
+@app.route("/freeAgents", methods=["GET"])
+def GetFreeAgents():
     # Get Free Agents For A League
     # Must supply Postion as a string
-    free_agents = last_years_lg.free_agents(position)
+    # free_agents = last_years_lg.free_agents(position)
+    c = last_years_lg.free_agents("C")
+    lw = last_years_lg.free_agents("LW")
+    rw = last_years_lg.free_agents("RW")
+    d = last_years_lg.free_agents("D")
+    g = last_years_lg.free_agents("G")
+
+    players = c + lw + rw + d + g
+    # sort players by percent_owned so that stats data comes back pre-sorted
+    players = sorted(players, key=lambda p: p['percent_owned'], reverse = True)
+
+    FA_Id_List = []
+    # some random players just don't exist in yahoo's data and they cause this to blow up 
+    blacklist = [4207, 5774]
+
+    for player in players:
+       if player['percent_owned'] >= 10:
+          if player['player_id'] not in blacklist and player['player_id'] not in FA_Id_List:
+            FA_Id_List.append(player['player_id'])
+
+    stats = last_years_lg.player_stats(FA_Id_List, 'season', '', '', 2022)
+
+    results = [{**u, **v} for u, v in zip(players, stats)]
+    print(results)
+    # player_and_stats_list = []
+    # for i in range(len(players)):
+    #    # merged_dict = {**dict1, **dict2}
+    #    print('players[i]')
+    #    print(players[i])
+    #    print('stats[i]')
+    #    print(stats[i])
     
-    return jsonify(free_agents)
+    return jsonify(results)
 
 @app.route("/stats/season/<stringOfPlayerIds>", methods=["GET"])
 def GetPlayerStatsForSeason(stringOfPlayerIds):
