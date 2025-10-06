@@ -22,12 +22,12 @@ gm = yfa.Game(sc, 'nhl')
 # This will have to be updated yearly
 leagues = gm.league_ids()
 
-print(leagues)
+# print(leagues)
 
 # Get the league object (must be updated annually, or take last one in list)
 # two_years_ago_lg = gm.to_league('419.l.37862')
 # last_years_lg = gm.to_league('427.l.14776')
-this_years_lg = gm.to_league('453.l.25256')
+this_years_lg = gm.to_league('465.l.8549')
 
 # Get the team key
 team_key = this_years_lg.team_key()
@@ -35,9 +35,92 @@ team_key = this_years_lg.team_key()
 # Get the team object
 my_team = this_years_lg.to_team(team_key)
 
-# Get team roster
-my_roster = my_team.roster()
-# print(my_roster)
+# Print league settings
+league_settings = this_years_lg.settings()
+print("League Settings:")
+print(league_settings)
+
+# Get stat categories
+print("\n\nStat Categories:")
+stat_categories = this_years_lg.stat_categories()
+print(stat_categories)
+
+# Get free agents for all positions
+print("\n\nRetrieving Free Agents...")
+c = this_years_lg.free_agents("C")
+lw = this_years_lg.free_agents("LW")
+rw = this_years_lg.free_agents("RW")
+d = this_years_lg.free_agents("D")
+g = this_years_lg.free_agents("G")
+
+# Combine all free agents
+free_agents = c + lw + rw + d + g
+
+# Filter for players owned in at least 25% of leagues (more likely to be valuable)
+high_owned_players = [p for p in free_agents if p.get('percent_owned', 0) >= 25]
+
+# Sort by ownership percentage (high ownership = more valuable)
+high_owned_players = sorted(high_owned_players, key=lambda p: p['percent_owned'], reverse=True)
+
+print(f"\nFound {len(high_owned_players)} free agents owned in 25%+ of leagues")
+
+# Get player IDs for top 20 to retrieve stats
+top_player_ids = [p['player_id'] for p in high_owned_players[:20]]
+
+# Get stats for top players (using last season since 2025-26 hasn't started)
+print("\nRetrieving player stats from last season (2024)...")
+player_stats = this_years_lg.player_stats(top_player_ids, 'season', '', '', 2024)
+
+# Combine player info with stats
+top_players_with_stats = []
+for i, player in enumerate(high_owned_players[:20]):
+    if i < len(player_stats):
+        combined = {**player, **player_stats[i]}
+        top_players_with_stats.append(combined)
+
+print("\n\nTop 20 Available Players:")
+for i, player in enumerate(top_players_with_stats[:20]):
+    print(f"\n{i+1}. {player.get('name', 'Unknown')} ({player.get('position_type', 'N/A')})")
+    print(f"   Ownership: {player.get('percent_owned', 0)}%")
+    print(f"   Team: {player.get('editorial_team_abbr', 'N/A')}")
+    print(f"   Stats: {player_stats[i] if i < len(player_stats) else 'N/A'}")
+
+# Get current roster
+print("\n\n=== MY CURRENT ROSTER ===")
+roster = my_team.roster()
+print(f"\nFound {len(roster)} players on roster")
+
+# Get player IDs from roster
+roster_player_ids = [p['player_id'] for p in roster]
+
+# Get stats for roster players
+print("\nRetrieving roster player stats from last season (2024)...")
+roster_stats = this_years_lg.player_stats(roster_player_ids, 'season', '', '', 2024)
+
+# Combine roster info with stats
+roster_with_stats = []
+for i, player in enumerate(roster):
+    if i < len(roster_stats):
+        combined = {**player, **roster_stats[i]}
+        roster_with_stats.append(combined)
+
+print("\n\nCurrent Roster with Stats:")
+for i, player in enumerate(roster_with_stats):
+    print(f"\n{i+1}. {player.get('name', 'Unknown')} ({player.get('position_type', 'N/A')})")
+    print(f"   Team: {player.get('editorial_team_abbr', 'N/A')}")
+    print(f"   Selected Position: {player.get('selected_position', 'N/A')}")
+    print(f"   Stats: {roster_stats[i] if i < len(roster_stats) else 'N/A'}")
+
+
+
+
+
+
+
+
+
+
+
 
 # # player_ids = []
 # # for player in roster:
@@ -47,30 +130,30 @@ my_roster = my_team.roster()
 # # print(stats)
 
 ################### Server ##############################
-app = Flask(__name__)
-CORS(app)
-print("SERVER IS RUNNING...")
+# app = Flask(__name__)
+# CORS(app)
+# print("SERVER IS RUNNING...")
 
 ################## Routes ###############################
-@app.route("/standings", methods=["GET"])
-def GetStandings():
-  # Get league standings
-  # Returns a list of all teams, index 0 = 1st place
-  # last_years_lg.standings()
-  standings = this_years_lg.standings()
-  return jsonify(standings)
+# @app.route("/standings", methods=["GET"])
+# def GetStandings():
+#   # Get league standings
+#   # Returns a list of all teams, index 0 = 1st place
+#   # last_years_lg.standings()
+#   standings = this_years_lg.standings()
+#   return jsonify(standings)
 
-@app.route("/roster", methods=["GET"])
-def GetMyRoster():
-  # Get team roster
-  roster = my_team.roster()
-  player_ids = []
-  for player in roster:
-    player_ids.append(player['player_id'])
-    print(player_ids)
-    stats = this_years_lg.player_stats(player_ids, 'season', '', '', 2021)
-    print(stats)
-  return jsonify(stats)
+# @app.route("/roster", methods=["GET"])
+# def GetMyRoster():
+#   # Get team roster
+#   roster = my_team.roster()
+#   player_ids = []
+#   for player in roster:
+#     player_ids.append(player['player_id'])
+#     print(player_ids)
+#     stats = this_years_lg.player_stats(player_ids, 'season', '', '', 2021)
+#     print(stats)
+#   return jsonify(stats)
 
 # @app.route("/matchup/<weekId>", methods=["GET"])
 # def GetMatchup(weekId = 1):
@@ -183,5 +266,5 @@ def GetMyRoster():
 
 #############################################################
 
-if __name__ == "__main__":
-    app.run(debug=True)
+# if __name__ == "__main__":
+#     app.run(debug=True)
